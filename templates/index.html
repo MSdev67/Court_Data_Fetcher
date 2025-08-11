@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Court Data Fetcher - 3D Enhanced</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom 3D styles */
+        .card-3d {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .card-3d:hover {
+            transform: translateY(-5px) rotateX(2deg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .input-3d {
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .input-3d:focus {
+            transform: translateY(-1px);
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+        }
+        
+        .button-3d {
+            transform-style: preserve-3d;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .button-3d:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .button-3d:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom styles for loading spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Enhanced 3D chat styles */
+        .chat-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            background-color: #f9fafb;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+            transform-style: preserve-3d;
+        }
+        
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            max-width: 80%;
+            position: relative;
+            transition: all 0.3s ease;
+            transform: translateZ(10px);
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+        }
+        
+        .user-message::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 0 10px 10px;
+            border-style: solid;
+            border-color: transparent transparent transparent #2563eb;
+        }
+        
+        .ai-message {
+            background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+            color: #111827;
+            align-self: flex-start;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .ai-message::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-width: 10px 10px 10px 0;
+            border-style: solid;
+            border-color: transparent #f3f4f6 transparent transparent;
+        }
+        
+        /* Floating elements */
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0% { transform: translateY(0px) rotateX(0deg); }
+            50% { transform: translateY(-10px) rotateX(2deg); }
+            100% { transform: translateY(0px) rotateX(0deg); }
+        }
+        
+        /* Glowing effect for important elements */
+        .glow {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        
+        /* 3D Tabs */
+        .tab-3d {
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .tab-3d::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            border-radius: inherit;
+            transform: translateZ(-5px);
+            filter: blur(5px);
+            opacity: 0.5;
+            z-index: -1;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-3d:hover::before {
+            transform: translateZ(-8px);
+            opacity: 0.8;
+        }
+        
+        /* 3D Panel */
+        .panel-3d {
+            background: linear-gradient(145deg, #ffffff, #f3f4f6);
+            border-radius: 1rem;
+            box-shadow: 8px 8px 16px #d1d5db, -8px -8px 16px #ffffff;
+            transform-style: preserve-3d;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        /* 3D Button Press Effect */
+        .btn-press {
+            transition: all 0.2s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .btn-press:active {
+            transform: translateY(4px) translateZ(-5px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="panel-3d p-8 rounded-xl w-full max-w-4xl">
+        <h1 class="text-4xl font-bold text-center text-gray-800 mb-8 floating">
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Delhi High Court Case Lookup</span>
+        </h1>
+
+        <form id="caseForm" class="space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="tab-3d">
+                    <label for="caseType" class="block text-sm font-medium text-gray-700 mb-2">Case Type</label>
+                    <select id="caseType" name="caseType" required
+                            class="input-3d w-full px-4 py-3 border-0 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 bg-white">
+                        <option value="">Select Case Type</option>
+                        <option value="WP(C)">WP(C)</option>
+                        <option value="CR.M.C.">CR.M.C.</option>
+                        <option value="RFA">RFA</option>
+                        <option value="CM(M)">CM(M)</option>
+                    </select>
+                </div>
+                
+                <div class="tab-3d">
+                    <label for="caseNumber" class="block text-sm font-medium text-gray-700 mb-2">Case Number</label>
+                    <input type="text" id="caseNumber" name="caseNumber" required
+                           placeholder="e.g., 1234"
+                           class="input-3d w-full px-4 py-3 border-0 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 bg-white">
+                </div>
+                
+                <div class="tab-3d">
+                    <label for="filingYear" class="block text-sm font-medium text-gray-700 mb-2">Filing Year</label>
+                    <input type="number" id="filingYear" name="filingYear" required
+                           placeholder="e.g., 2023" min="1900" max="2099"
+                           class="input-3d w-full px-4 py-3 border-0 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 bg-white">
+                </div>
+            </div>
+
+            <div class="flex justify-center">
+                <button type="submit" id="fetchButton"
+                        class="button-3d btn-press inline-flex items-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl shadow-lg text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200">
+                    Fetch Case Data
+                    <span id="loadingSpinner" class="spinner hidden"></span>
+                </button>
+            </div>
+        </form>
+
+        <div id="messageBox" class="mt-8 p-4 rounded-xl text-sm hidden transform transition-all duration-300" role="alert"></div>
+
+        <div id="results" class="mt-8 space-y-6 hidden">
+            <h2 class="text-3xl font-bold text-gray-800 border-b-2 pb-3 mb-6">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Case Details</span>
+            </h2>
+
+            <div class="panel-3d p-6 rounded-xl space-y-3 bg-gradient-to-br from-blue-50 to-indigo-50">
+                <p class="text-gray-800 text-lg"><span class="font-bold">Case Title:</span> <span id="caseTitle" class="font-medium"></span></p>
+                <p class="text-gray-800 text-lg"><span class="font-bold">Case Number:</span> <span id="fullCaseNumber" class="font-medium"></span></p>
+                <p class="text-gray-800 text-lg"><span class="font-bold">Court:</span> <span id="courtName" class="font-medium"></span></p>
+                <p class="text-gray-800 text-lg"><span class="font-bold">Judge:</span> <span id="judgeName" class="font-medium"></span></p>
+                <p class="text-gray-800 text-lg"><span class="font-bold">Filing Date:</span> <span id="filingDate" class="font-medium"></span></p>
+                <p class="text-gray-800 text-lg"><span class="font-bold">Next Hearing Date:</span> <span id="nextHearingDate" class="font-medium"></span></p>
+                <p class="text-gray-800 text-lg"><span class="font-bold">Status:</span> <span id="caseStatus" class="font-medium"></span></p>
+            </div>
+
+            <h3 class="text-2xl font-bold text-gray-800 border-b-2 pb-3 mb-6">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Latest Order</span>
+            </h3>
+            <div id="latestOrder" class="space-y-6">
+                <!-- Latest order will be dynamically loaded here -->
+            </div>
+        </div>
+        
+        <div id="footer" class="mt-8 text-center text-gray-500 text-sm hidden">
+            <!-- Footer will be dynamically loaded here -->
+        </div>
+
+        <!-- Enhanced 3D AI Assistant Section -->
+        <div class="mt-12 p-8 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl transform transition-all duration-500 hover:shadow-2xl">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8 floating">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">AI Legal Assistant</span>
+            </h2>
+            
+            <div id="chatHistory" class="chat-container mb-6">
+                <div class="chat-message ai-message">Hello! I'm your AI legal assistant. Ask me anything about the case data you fetch, and I'll provide insights and analysis.</div>
+            </div>
+            
+            <div class="flex space-x-2">
+                <input type="text" id="aiInput" placeholder="Ask a question about the case..."
+                       class="input-3d flex-grow px-5 py-3 border-0 rounded-l-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 bg-white">
+                <button type="button" id="aiSendButton"
+                        class="button-3d btn-press inline-flex items-center px-6 py-3 border border-transparent text-lg font-medium rounded-r-xl shadow-md text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50 transition-all duration-200">
+                    Send
+                    <span id="aiLoadingSpinner" class="spinner hidden"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variable to store current case data for AI context
+        let currentCaseData = null;
+
+        document.getElementById('caseForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const fetchButton = document.getElementById('fetchButton');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const messageBox = document.getElementById('messageBox');
+            const resultsDiv = document.getElementById('results');
+            const footerDiv = document.getElementById('footer');
+
+            // Case Details elements
+            const caseTitleSpan = document.getElementById('caseTitle');
+            const fullCaseNumberSpan = document.getElementById('fullCaseNumber');
+            const courtNameSpan = document.getElementById('courtName');
+            const judgeNameSpan = document.getElementById('judgeName');
+            const filingDateSpan = document.getElementById('filingDate');
+            const nextHearingDateSpan = document.getElementById('nextHearingDate');
+            const caseStatusSpan = document.getElementById('caseStatus');
+
+            // Latest Order elements
+            const latestOrderDiv = document.getElementById('latestOrder');
+
+            // Reset UI
+            messageBox.classList.add('hidden');
+            resultsDiv.classList.add('hidden');
+            footerDiv.classList.add('hidden');
+            messageBox.textContent = '';
+            messageBox.className = 'mt-8 p-4 rounded-xl text-sm hidden transform transition-all duration-300'; // Reset classes
+            latestOrderDiv.innerHTML = '';
+            currentCaseData = null; // Clear case data for AI context
+
+            // Show loading state
+            fetchButton.disabled = true;
+            loadingSpinner.classList.remove('hidden');
+            fetchButton.classList.add('opacity-90', 'cursor-not-allowed');
+
+            try {
+                // Simulate API call (replace with actual fetch)
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Mock response (replace with actual API response)
+                const mockResponse = {
+                    status: 'success',
+                    case_title: 'Sample Case Title vs. Respondent',
+                    case_number_full: 'WP(C) 1234/2023',
+                    court: 'Delhi High Court',
+                    judge: 'Honorable Justice Sharma',
+                    filing_date: '15/03/2023',
+                    next_hearing_date: '10/09/2023',
+                    case_status: 'Pending',
+                    latest_order: {
+                        date: '05/07/2023',
+                        type: 'Interim Order',
+                        description: 'The court has issued an interim order directing the respondent to maintain status quo until the next hearing date.',
+                        pdf_link: '#',
+                        pdf_size: '1.2MB'
+                    },
+                    fetched_on: new Date().toLocaleString()
+                };
+                
+                const data = mockResponse; // Replace with actual response from fetch
+
+                if (data.status === 'success') {
+                    // Store fetched data for AI context
+                    currentCaseData = data;
+
+                    // Populate Case Details
+                    caseTitleSpan.textContent = data.case_title;
+                    fullCaseNumberSpan.textContent = data.case_number_full;
+                    courtNameSpan.textContent = data.court;
+                    judgeNameSpan.textContent = data.judge;
+                    filingDateSpan.textContent = data.filing_date;
+                    nextHearingDateSpan.textContent = data.next_hearing_date;
+                    caseStatusSpan.textContent = data.case_status;
+
+                    // Populate Latest Order
+                    if (data.latest_order) {
+                        const order = data.latest_order;
+                        const orderDiv = document.createElement('div');
+                        orderDiv.className = 'panel-3d p-6 rounded-xl space-y-4 bg-white';
+                        orderDiv.innerHTML = `
+                            <p class="text-gray-800 text-lg"><span class="font-bold">Date:</span> ${order.date}</p>
+                            <p class="text-gray-800 text-lg"><span class="font-bold">Type:</span> ${order.type}</p>
+                            <p class="text-gray-800 text-lg"><span class="font-bold">Description:</span> ${order.description}</p>
+                            ${order.pdf_link ? `<a href="${order.pdf_link}" target="_blank" class="button-3d btn-press inline-flex items-center px-5 py-2.5 border border-transparent text-base font-medium rounded-lg shadow-md text-white bg-gradient-to-r from-green-600 to-teal-500 hover:from-green-700 hover:to-teal-600 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 transition-all duration-200 mt-3">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                Download Order (${order.pdf_size})
+                            </a>` : ''}
+                        `;
+                        latestOrderDiv.appendChild(orderDiv);
+                    } else {
+                        latestOrderDiv.innerHTML = '<p class="text-gray-600 text-lg">No latest order found for this case.</p>';
+                    }
+
+                    // Show results and footer with animation
+                    resultsDiv.classList.remove('hidden');
+                    footerDiv.classList.remove('hidden');
+                    footerDiv.textContent = `Data fetched on ${data.fetched_on}`;
+                    
+                    // Animate the results appearing
+                    resultsDiv.style.opacity = '0';
+                    resultsDiv.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        resultsDiv.style.transition = 'all 0.5s ease-out';
+                        resultsDiv.style.opacity = '1';
+                        resultsDiv.style.transform = 'translateY(0)';
+                    }, 50);
+
+                } else {
+                    currentCaseData = null; // Clear case data on error
+                    messageBox.classList.remove('hidden');
+                    messageBox.classList.add('bg-red-100', 'border-red-400', 'text-red-700', 'transform', 'scale-105');
+                    messageBox.textContent = data.message || 'Failed to fetch case data. Please try again.';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                currentCaseData = null; // Clear case data on error
+                messageBox.classList.remove('hidden');
+                messageBox.classList.add('bg-red-100', 'border-red-400', 'text-red-700', 'transform', 'scale-105');
+                messageBox.textContent = 'Network error or server issue. Please try again later.';
+            } finally {
+                // Hide loading state
+                fetchButton.disabled = false;
+                loadingSpinner.classList.add('hidden');
+                fetchButton.classList.remove('opacity-90', 'cursor-not-allowed');
+            }
+        });
+
+        // AI Assistant Logic
+        const aiInput = document.getElementById('aiInput');
+        const aiSendButton = document.getElementById('aiSendButton');
+        const aiLoadingSpinner = document.getElementById('aiLoadingSpinner');
+        const chatHistoryDiv = document.getElementById('chatHistory');
+
+        function addMessageToChat(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}-message`;
+            messageDiv.textContent = message;
+            chatHistoryDiv.appendChild(messageDiv);
+            
+            // Animation for new message
+            messageDiv.style.opacity = '0';
+            messageDiv.style.transform = sender === 'user' ? 'translateX(20px)' : 'translateX(-20px)';
+            setTimeout(() => {
+                messageDiv.style.transition = 'all 0.3s ease-out';
+                messageDiv.style.opacity = '1';
+                messageDiv.style.transform = 'translateX(0)';
+            }, 50);
+            
+            chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight; // Scroll to bottom
+        }
+
+        aiSendButton.addEventListener('click', async function() {
+            const question = aiInput.value.trim();
+            if (!question) return;
+
+            addMessageToChat(question, 'user');
+            aiInput.value = ''; // Clear input
+
+            // Show loading state for AI
+            aiSendButton.disabled = true;
+            aiLoadingSpinner.classList.remove('hidden');
+
+            try {
+                // Simulate AI response (replace with actual API call)
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                
+                let responseText = "I'm sorry, I couldn't find any case data to analyze. Please fetch a case first.";
+                
+                if (currentCaseData) {
+                    // Generate mock AI response based on case data
+                    responseText = `Based on the case ${currentCaseData.case_number_full} (${currentCaseData.case_title}), here's my analysis:\n\n`;
+                    
+                    if (currentCaseData.case_status === 'Pending') {
+                        responseText += "The case is currently pending with the next hearing scheduled for " + 
+                                      currentCaseData.next_hearing_date + ". ";
+                        
+                        if (currentCaseData.latest_order) {
+                            responseText += "The latest order issued was on " + currentCaseData.latest_order.date + 
+                                          " which was an " + currentCaseData.latest_order.type + ". " +
+                                          "The order directs: " + currentCaseData.latest_order.description;
+                        } else {
+                            responseText += "No recent orders have been issued in this case.";
+                        }
+                    } else {
+                        responseText += "The case appears to be concluded with status: " + currentCaseData.case_status;
+                    }
+                    
+                    responseText += "\n\nWould you like me to explain any specific aspect of this case in more detail?";
+                }
+
+                addMessageToChat(responseText, 'ai');
+            } catch (error) {
+                console.error('Error asking AI:', error);
+                addMessageToChat('There was a problem connecting to the AI. Please try again.', 'ai');
+            } finally {
+                // Hide loading state for AI
+                aiSendButton.disabled = false;
+                aiLoadingSpinner.classList.add('hidden');
+            }
+        });
+
+        // Allow sending AI messages with Enter key
+        aiInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent new line in input
+                aiSendButton.click();
+            }
+        });
+    </script>
+</body>
+</html>
